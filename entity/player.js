@@ -1,7 +1,7 @@
 import Bullet from "./bullet.js";
-import { playerColor } from "./colors.js";
-import { getVector } from "./calc.js";
-import { ctx, entityArray, bulletsArray } from "./main.js";
+import { playerColor } from "../colors.js";
+import { getVector } from "../math/calc.js";
+import { ctx, entityArray, bulletsArray } from "../main.js";
 
 export default class Player {
     constructor(id, width, height, x, y, name) {
@@ -19,14 +19,14 @@ export default class Player {
         this.xCenter = this.getCenterX(this.x);
         this.yCenter = this.getCenterY(this.y);
 
-        this.beX = 0;
-        this.beY = 0;
+        this.xComing = 0;
+        this.yComing = 0;
 
         this.health = 200;
         this.killing = false;
 
         this.bulletLifetime = 3000;
-        this.bulletSpeed = 8;
+        this.bulletSpeed = 6;
     }
 
     move = (x, y) => {
@@ -38,11 +38,11 @@ export default class Player {
     }
 
     moveAnim = (x, y) => {
-        if (this.beX != 0 || this.beY != 0) return;
+        if (this.xComing != 0 || this.yComing != 0) return;
         if (this.isCollision(x, y)) return;
 
-        this.beX = this.x - x;
-        this.beY = this.y - y;
+        this.xComing = this.x - x;
+        this.yComing = this.y - y;
     }
 
     moveUp = () => this.moveAnim(this.x, this.y - this.speed);
@@ -51,26 +51,6 @@ export default class Player {
     moveRight = () => this.moveAnim(this.x + this.speed, this.y);
 
     paint = () => {
-        if (this.beX < 0) {
-            this.move(this.x + this.animSpeed, this.y);
-            this.beX += this.animSpeed;
-        }
-        else
-        if (this.beX > 0) {
-            this.move(this.x - this.animSpeed, this.y);
-            this.beX -= this.animSpeed;
-        }
-        else
-        if (this.beY < 0) {
-            this.move(this.x, this.y + this.animSpeed);
-            this.beY += this.animSpeed;
-        }
-        else
-        if (this.beY > 0) {
-            this.move(this.x, this.y - this.animSpeed);
-            this.beY -= this.animSpeed;
-        }
-
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
@@ -79,7 +59,7 @@ export default class Player {
     };
 
     attack = () => {
-        let bullet = new Bullet(bulletsArray[this.id].length, this.xCenter, this.yCenter, 7, this.color, this.id, "green");
+        let bullet = new Bullet(bulletsArray[this.id].length, this.xCenter, this.yCenter, 4, this.color, this.id, "green");
         bulletsArray[this.id].push(bullet);
     };
 
@@ -97,6 +77,26 @@ export default class Player {
     getCenterY = (y) => y += this.height / 2;
 
     life = (mouseX, mouseY) => {
+        if (this.xComing < 0) {
+            this.move(this.x + this.animSpeed, this.y);
+            this.xComing += this.animSpeed;
+        }
+        else
+        if (this.xComing > 0) {
+            this.move(this.x - this.animSpeed, this.y);
+            this.xComing -= this.animSpeed;
+        }
+        else
+        if (this.yComing < 0) {
+            this.move(this.x, this.y + this.animSpeed);
+            this.yComing += this.animSpeed;
+        }
+        else
+        if (this.yComing > 0) {
+            this.move(this.x, this.y - this.animSpeed);
+            this.yComing -= this.animSpeed;
+        }
+
         this.paint();
 
         if (bulletsArray[this.id].length > 0) {

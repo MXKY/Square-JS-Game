@@ -1,7 +1,7 @@
 import Bullet from "./bullet.js";
-import { enemyColor } from "./colors.js";
-import { getVector } from "./calc.js";
-import { ctx, entityArray, bulletsArray } from "./main.js";
+import { enemyColor } from "../colors.js";
+import { getVector } from "../math/calc.js";
+import { ctx, entityArray, bulletsArray } from "../main.js";
 
 export default class Enemy {
     constructor(id, width, height, x, y, name, target) {
@@ -14,14 +14,14 @@ export default class Enemy {
         this.height = height;
         this.x = x;
         this.y = y;
-        this.speed = (this.width + this.height) / 2;
+        this.speed = 50;
         this.animSpeed = this.speed / 25;
 
         this.xCenter = this.getCenterX(this.x);
         this.yCenter = this.getCenterY(this.y);
 
-        this.beX = 0;
-        this.beY = 0;
+        this.xComing = 0;
+        this.yComing = 0;
         
         this.health = 500;
         this.killing = false;
@@ -44,11 +44,11 @@ export default class Enemy {
     }
 
     moveAnim = (x, y) => {
-        if (this.beX != 0 || this.beY != 0) return;
+        if (this.xComing != 0 || this.yComing != 0) return;
         if (this.isCollision(x, y)) return;
 
-        this.beX = this.x - x;
-        this.beY = this.y - y;
+        this.xComing = this.x - x;
+        this.yComing = this.y - y;
     }
 
     moveUp = () => this.moveAnim(this.x, this.y - this.speed);
@@ -57,26 +57,6 @@ export default class Enemy {
     moveRight = () => this.moveAnim(this.x + this.speed, this.y);
 
     paint = () => {
-        if (this.beX < 0) {
-            this.move(this.x + this.animSpeed, this.y);
-            this.beX += this.animSpeed;
-        }
-
-        if (this.beX > 0) {
-            this.move(this.x - this.animSpeed, this.y);
-            this.beX -= this.animSpeed;
-        }
-
-        if (this.beY < 0) {
-            this.move(this.x, this.y + this.animSpeed);
-            this.beY += this.animSpeed;
-        }
-
-        if (this.beY > 0) {
-            this.move(this.x, this.y - this.animSpeed);
-            this.beY -= this.animSpeed;
-        }
-
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
@@ -87,7 +67,7 @@ export default class Enemy {
     };
 
     attack = () => {
-        let bullet = new Bullet(bulletsArray[this.id].length, this.xCenter, this.yCenter, this.width / 13, this.color, this.id, this.target.color);
+        let bullet = new Bullet(bulletsArray[this.id].length, this.xCenter, this.yCenter, 3, this.color, this.id, this.target.color);
         bulletsArray[this.id].push(bullet);
     };
 
@@ -107,9 +87,29 @@ export default class Enemy {
     getCenterY = (y) => y += this.height / 2;
 
     life = () => {
-        if (!this.peace) this.startAttack(800 * (Math.random() + 0.2));
+        if (!this.peace) this.startAttack(700 * (Math.random() + 0.2));
         this.startMove(1300 * (Math.random() + 0.2));
 
+        if (this.xComing < 0) {
+            this.move(this.x + this.animSpeed, this.y);
+            this.xComing += this.animSpeed;
+        }
+
+        if (this.xComing > 0) {
+            this.move(this.x - this.animSpeed, this.y);
+            this.xComing -= this.animSpeed;
+        }
+
+        if (this.yComing < 0) {
+            this.move(this.x, this.y + this.animSpeed);
+            this.yComing += this.animSpeed;
+        }
+
+        if (this.yComing > 0) {
+            this.move(this.x, this.y - this.animSpeed);
+            this.yComing -= this.animSpeed;
+        }
+        
         this.paint();
 
         if (bulletsArray[this.id].length > 0) {
@@ -181,16 +181,16 @@ export default class Enemy {
         if (this.moveInterval != 0) return;
         
         this.moveInterval = setInterval(() => {
-            if (Math.random() < 0.30) {
+            if (Math.random() < 0.50) {
                 if (Math.random() < 0.50)
-                    this.moveUp();
+                    for (let i = 1; i <= 5 * Math.random(); i++ ) this.moveUp();
                 else
-                    this.moveDown();
+                    for (let i = 1; i <= 5 * Math.random(); i++ ) this.moveDown();
 
-                if (Math.random() < 0.50)
-                    this.moveLeft();
+                if (Math.random() < 0.70)
+                    for (let i = 1; i <= 5 * Math.random() + 1; i++ ) this.moveLeft();
                 else
-                    this.moveRight();
+                    for (let i = 1; i <= 5 * Math.random() + 1; i++ ) this.moveRight();
             }}, interval);
     }
     stopMove = () => clearInterval(this.moveInterval);

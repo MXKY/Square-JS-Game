@@ -1,5 +1,6 @@
-import { getDistance, normalize } from "./calc.js";
-import { ctx, bulletsArray } from "./main.js";
+import { getDistance, getVector, normalize } from "../math/calc.js";
+import { ctx, bulletsArray } from "../main.js";
+import { MotionFeatures } from "../math/motionFeatures.js";
 
 export default class Bullet {
     constructor(id, x, y, radius, color, from, target) {
@@ -19,15 +20,29 @@ export default class Bullet {
 
         this.target = target;
 
-        this.i = 0;
+        this.motionFeatures = new MotionFeatures((x, y) => {
+            let resultX = (Math.sin(x / 10) * 3);
+            let resultY = (Math.sin(y / 10) * 3);
+            
+            if (Math.abs(resultX) > Math.abs(resultY))
+                resultY = 0;
+            else
+                resultX = 0;
+
+            return { resultX, resultY };
+        });
     }
 
     paint = () => {
+        let mathFuncResult = this.motionFeatures.invokeMathFunc(this.x, this.y);
+        
+        ctx.beginPath();
+        ctx.arc(this.x  + mathFuncResult.resultX, this.y + mathFuncResult.resultY, this.radius + this.motionFeatures.getScale(0.03), 0, 2 * Math.PI, false);
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x - this.i / 2, this.y - this.i / 2, this.radius + this.i, this.radius + this.i);
-
-        if (this.i >= 0 && this.i < 50) this.i += 0.1;
-        //else this.i = 0;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
     };
 
     setVector = (xVector, yVector) => {
@@ -51,27 +66,27 @@ export default class Bullet {
         updateCol();
 
         if (isCollision) {
+            this.motionFeatures.startMathFunction(2000);
+
             if (collision === this.target) {
                 this.color = "orange";
-                this.killFromTimeout(100);
+                this.killFromTimeout(200);
             }
             
             if (Math.abs(this.xVector) > Math.abs(this.yVector)) {
                 if (collision === this.target) {
-                    this.xVector = this.xVector * Math.random();
+                    this.xVector = this.xVector;
                 }
 
                 this.xVector = -this.xVector;
                 beX = this.x + this.xVector * speed;
-                beY += (Math.random() - 0.5) * 3; //разброс
             } else {
                 if (collision === this.target) {
-                    this.yVector = this.yVector * Math.random();
+                    this.yVector = this.yVector;
                 }
 
                 this.yVector = -this.yVector;
                 beY = this.y + this.yVector * speed;
-                beX += (Math.random() - 0.5) * 3;
             }
 
             updateCol();
@@ -98,19 +113,24 @@ export default class Bullet {
     }
 
     isCollision = (x, y) => {
-        let colors = ctx.getImageData(x, y, 1, 1).data;
-        //console.log(colors);
-        if (colors[0] === 0 && colors[1] === 0 && colors[2] === 0 && colors[3] === 255) 
-            return "black";
+        let answer = "white";
+        let vector = getVector(this.x, this.y, x, y);
 
-        if (this.target === "red")
-            if (colors[0] === 255 && colors[1] === 0 && colors[2] === 0 && colors[3] === 255) 
-                return "red";
-        
-        if (this.target === "green")
-            if (colors[0] === 0 && colors[1] > 0 && colors[2] === 0 && colors[3] === 255) 
-                return "green";
+        for (let i = 1; i <= getDistance(vector.xVector, vector.yVector); i++) {
+            let colors = ctx.getImageData(x + vector.xVector, y + vector.yVector, 1, 1).data;
+            
+            if (colors[0] === 0 && colors[1] === 0 && colors[2] === 0 && colors[3] === 255) 
+                return "black";
 
-        return "white";
+            if (this.target === "red")
+                if (colors[0] === 255 && colors[1] === 0 && colors[2] === 0 && colors[3] === 255) 
+                    return "red";
+            
+            if (this.target === "green")
+                if (colors[0] === 0 && colors[1] > 0 && colors[2] === 0 && colors[3] === 255) 
+                    return "green";
+        }
+
+        return answer;
     };
 }
